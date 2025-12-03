@@ -383,31 +383,16 @@ class Component {
 class Battery extends Component {
     constructor(x, y) {
         super(x, y, 'battery');
-        // Single Battery Nodes - centered vertically
+        // Single Battery Nodes
         this.nodes.push(new Node(this, -60, 0, 'positive')); 
         this.nodes.push(new Node(this, 60, 0, 'negative')); 
     }
     draw(ctx) {
-        // Battery Holder
-        ctx.fillStyle = '#34495e'; 
-        drawRoundRect(ctx, this.x - 70, this.y - 25, 140, 50, 10);
-        
-        // Single Battery
-        ctx.fillStyle = Colors.battery; 
-        drawRoundRect(ctx, this.x - 50, this.y - 10, 100, 20, 5);
-        
-        // Positive Terminal (Left)
-        ctx.fillStyle = '#ccc'; 
-        ctx.fillRect(this.x - 55, this.y - 6, 6, 12);
-
-        // Labels
-        ctx.fillStyle = '#E74C3C'; 
-        ctx.font = 'bold 24px Arial'; 
-        ctx.fillText('+', this.x - 60, this.y - 35);
-        ctx.fillStyle = '#fff'; 
-        ctx.fillText('-', this.x + 60, this.y - 35);
-        
-        // Face
+        ctx.fillStyle = '#34495e'; drawRoundRect(ctx, this.x - 70, this.y - 25, 140, 50, 10);
+        ctx.fillStyle = Colors.battery; drawRoundRect(ctx, this.x - 50, this.y - 10, 100, 20, 5);
+        ctx.fillStyle = '#ccc'; ctx.fillRect(this.x - 55, this.y - 6, 6, 12);
+        ctx.fillStyle = '#E74C3C'; ctx.font = 'bold 24px Arial'; ctx.fillText('+', this.x - 60, this.y - 35);
+        ctx.fillStyle = '#fff'; ctx.fillText('-', this.x + 60, this.y - 35);
         this.drawFace(ctx, this.x, this.y - 35);
     }
     drawFace(ctx, x, y) {
@@ -527,10 +512,8 @@ class Wire {
                 color = (globalTime % 20 < 10) ? Colors.wireShort : Colors.wireBlack;
             }
         } else {
-            // New logic: Only light up wire if current actually flows through logic
             const bulb = components.find(c => c.type === 'bulb');
             const isCircuitActive = bulb && bulb.state === 'on';
-            
             if (isCircuitActive && ((this.nodeA.hasPos || this.nodeA.hasNeg) || (this.nodeB.hasPos || this.nodeB.hasNeg))) {
                 color = Colors.wireOn;
             } else if (this.nodeA.hasPos || this.nodeB.hasPos) {
@@ -566,7 +549,7 @@ function drawItem(ctx, item, x, y) {
     ctx.restore();
 }
 
-// --- Circuit Physics & Logic ---
+// --- Circuit Physics Logic ---
 
 function runSimulation() {
     components.forEach(c => {
@@ -576,7 +559,6 @@ function runSimulation() {
     const batt = components.find(c => c.type === 'battery');
     if (!batt) return { connected: false };
 
-    // Spread
     const spread = (startNode, type) => {
         let queue = [startNode];
         let visited = new Set([startNode]);
@@ -597,7 +579,7 @@ function runSimulation() {
                         let pass = false;
                         if(comp.type==='switch' && !comp.isOpen) pass=true;
                         if(comp.type==='gap' && comp.filledItem && comp.filledItem.type==='conductor') pass=true;
-                        // Bulb does NOT pass in simulation to detect proper loop usage
+                        // Bulb is Load, does NOT pass
                         
                         if(pass) {
                             comp.nodes.forEach(n => {
@@ -617,7 +599,6 @@ function runSimulation() {
     spread(batt.nodes[0], 'POS');
     spread(batt.nodes[1], 'NEG');
     
-    // Check Status
     let shorted = false;
     let crossed = false;
     let connected = false;
@@ -631,9 +612,8 @@ function runSimulation() {
     if(!shorted) {
         components.filter(c => c.type === 'bulb').forEach(b => {
             const left = b.nodes[0]; const right = b.nodes[1];
-            // Anti-Cross Logic: Left must be Pos, Right must be Neg (or unconnected)
-            // Wait, standard is Left->Left, Right->Right? 
-            // Usually Battery Left is Pos. So Bulb Left should get Pos.
+            // Anti-Cross Logic: Left must be Pos, Right must be Neg.
+            // Battery: Left is Pos, Right is Neg.
             if(left.hasPos && right.hasNeg) connected = true;
             else if(left.hasNeg && right.hasPos) crossed = true;
         });
@@ -646,48 +626,39 @@ function checkCircuit() {
     components.forEach(c => c.state = 'off');
     isShortCircuit = false; isCrossed = false; isBypassed = false;
 
-    // 1. Initial Simulation
     let res = runSimulation();
     isShortCircuit = res.shorted;
     isCrossed = res.crossed;
     
     if(res.connected && !res.shorted) {
-        // 2. Anti-Bypass Validation
+        // Anti-Bypass
         let valid = true;
-        
         if (currentLevel === 2) {
-            // Temporarily Open Switch
             const sw = components.find(c => c.type === 'switch');
             const originalState = sw.isOpen;
-            sw.isOpen = true; // Force Open
+            sw.isOpen = true;
             const sim = runSimulation();
-            if (sim.connected) { valid = false; isBypassed = true; } // Still connected -> Switch bypassed
-            sw.isOpen = originalState; // Restore
+            if (sim.connected) { valid = false; isBypassed = true; }
+            sw.isOpen = originalState;
         }
-        
         if (currentLevel === 3) {
-            // Temporarily Remove Item
             const gap = components.find(c => c.type === 'gap');
             const originalItem = gap.filledItem;
-            gap.filledItem = null; // Force Empty
+            gap.filledItem = null; 
             const sim = runSimulation();
-            if (sim.connected) { valid = false; isBypassed = true; } // Still connected -> Gap bypassed
-            gap.filledItem = originalItem; // Restore
+            if (sim.connected) { valid = false; isBypassed = true; }
+            gap.filledItem = originalItem;
         }
         
         if (valid) {
             components.find(c => c.type === 'battery').state = 'on';
             components.filter(c => c.type === 'bulb').forEach(b => b.state = 'on');
-            
-            // Re-run sim to ensure colors are correct (simulation clears flags)
             runSimulation(); 
-            
             if(!isLevelComplete) {
                 isLevelComplete = true;
                 setTimeout(showWin, 800);
             }
         } else {
-            // If bypassed, we need to re-run simulation to show wires but NOT light bulb
             runSimulation();
         }
     }
