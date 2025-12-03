@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DIY 可愛電路維修員 - 最終版</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #E8F6F3;
+            font-family: 'Fredoka', 'Microsoft JhengHei', sans-serif;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .header {
+            text-align: center;
+            padding-top: 15px;
+            pointer-events: auto;
+        }
+
+        h1 { 
+            margin: 0; 
+            font-size: 32px; 
+            color: #FF8BA7; 
+            text-shadow: 2px 2px 0px #fff; 
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        .instruction-badge {
+            display: inline-block;
+            background: white;
+            color: #555;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            border: 3px solid #FF8BA7;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 90%;
+        }
+
+        .level-tag {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #FFD700;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 2px 0 #E5C100;
+        }
+
+        .toolbar {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            pointer-events: auto;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .tool-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        .tool-btn:active { transform: translateY(4px); box-shadow: none; }
+        .btn-reset { color: #E74C3C; border: 2px solid #E74C3C; }
+        .btn-delete { color: #555; border: 2px solid #555; }
+        
+        /* AI 按鈕樣式 */
+        .btn-ai {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 2px solid white;
+            width: 70px;
+            height: 70px;
+            font-size: 32px;
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(118, 75, 162, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(118, 75, 162, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(118, 75, 162, 0); }
+        }
+
+        #overlay, #ai-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 245, 230, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+            pointer-events: auto;
+        }
+        
+        #ai-overlay {
+            background: rgba(44, 62, 80, 0.85);
+            display: none;
+            z-index: 200;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 6px solid #fff;
+            max-width: 90%;
+            width: 400px;
+        }
+        
+        .ai-card {
+            background: white;
+            border: 6px solid #764ba2;
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+        }
+        
+        .ai-avatar {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+
+        .card h2 { color: #fff; font-size: 32px; margin: 0 0 15px 0; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+        .ai-card h2 { color: #764ba2; text-shadow: none; margin-bottom: 5px; }
+        
+        .card p { color: #fff; font-size: 20px; font-weight: 600; line-height: 1.6; }
+        .ai-card p { color: #555; font-size: 20px; font-weight: bold; text-align: left; white-space: pre-wrap; line-height: 1.5; }
+
+        .action-btn {
+            background: #fff;
+            color: #FF6B6B;
+            border: none;
+            padding: 15px 50px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            font-family: inherit;
+            font-weight: 800;
+            box-shadow: 0 6px 0 #eee;
+            transition: transform 0.1s;
+        }
+        .action-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #eee; }
+        
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            font-size: 18px;
+            padding: 10px 30px;
+            margin-top: 20px;
+            box-shadow: 0 4px 0 #c0392b;
+        }
+
+        #snap-ring {
+            position: absolute;
+            width: 30px; 
+            height: 30px;
+            border: 4px solid #2ECC71;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            z-index: 50;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="snap-ring"></div>
+
+    <div id="ui-layer">
+        <div class="level-tag" id="level-display">Level 1</div>
+        <div class="header">
+            <h1>🔧 DIY 可愛電路維修員</h1>
+            <div class="instruction-badge" id="instruction">載入中...</div>
+        </div>
+        <div class="toolbar">
+            <button class="tool-btn btn-ai" id="btn-ai" title="詢問 AI 老師">✨</button>
+            <button class="tool-btn btn-delete" id="btn-delete" title="清除所有電線">🗑️</button>
+            <button class="tool-btn btn-reset" id="btn-reset" title="重置本關">↻</button>
+        </div>
+    </div>
+
+    <!-- 關卡開始 彈窗 -->
+    <div id="overlay">
+        <div class="card">
+            <h2 id="overlay-title">第一關：DIY 接線</h2>
+            <p id="overlay-desc">電池在上方，燈泡在下方。<br>請用滑鼠畫出電線，<br>將它們連接成一個閉合電路！</p>
+            <button class="action-btn" id="btn-start">開始挑戰</button>
+        </div>
+    </div>
+    
+    <!-- AI 提示彈窗 -->
+    <div id="ai-overlay">
+        <div class="card ai-card">
+            <div class="ai-avatar">🤖</div>
+            <h2>AI 科學老師</h2>
+            <p id="ai-content">正在分析電路中...</p>
+            <button class="action-btn close-btn" id="btn-ai-close">知道了！</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+
+// --- 系統變數 ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const uiInstruction = document.getElementById('instruction');
+const uiLevel = document.getElementById('level-display');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlayDesc = document.getElementById('overlay-desc');
+const btnStart = document.getElementById('btn-start');
+const btnReset = document.getElementById('btn-reset');
+const btnDelete = document.getElementById('btn-delete');
+const btnAi = document.getElementById('btn-ai');
+const aiOverlay = document.getElementById('ai-overlay');
+const aiContent = document.getElementById('ai-content');
+const btnAiClose = document.getElementById('btn-ai-close');
+const snapRing = document.getElementById('snap-ring');
+
+const Colors = {
+    wireOff: '#95a5a6',
+    wireOn: '#F1C40F',
+    wireRed: '#E74C3C',
+    wireBlack: '#2C3E50',
+    wireShort: '#C0392B', // 短路顏色
+    node: '#BDC3C7',
+    battery: '#FFC3A0',
+    bulbOn: '#FFF9C4',
+    bulbOff: '#ECF0F1'
+};
+
+let currentLevel = 1;
+let components = [];
+let wires = [];
+let dragNode = null;
+let tempWireEnd = { x: 0, y: 0 };
+let isLevelComplete = false;
+let globalTime = 0;
+let loopId;
+let isShortCircuit = false;
+let isCrossed = false;
+let isBypassed = false; // 是否繞過元件
+
+// --- 輔助函式 ---
+function drawRoundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+    else ctx.rect(x, y, w, h);
+    ctx.fill();
+}
+
+// --- 內建 AI 邏輯 (Rule-Based) ---
+
+function getLocalAIHint() {
+    if (isShortCircuit) return "⚠️ 小心！發生短路了！\n正極和負極直接接在一起，沒有經過燈泡。\n請檢查線路。";
+    if (isCrossed) return "⚠️ 電線交叉了！\n請確保正極接一邊，負極接另一邊，\n不要交叉連接燈泡喔。";
+    if (isBypassed) {
+        if (currentLevel === 2) return "🤔 燈泡雖然可以亮，但是...\n你好像沒有用到「開關」？\n請把開關串聯進電路裡！";
+        if (currentLevel === 3) return "🤔 燈泡亮了，但你沒有測試到物品喔！\n請把電線接到測試區的夾子上。";
+    }
+
+    const bulb = components.find(c => c.type === 'bulb');
+    if (bulb && bulb.state === 'on') return "太棒了！燈泡已經亮起來囉！\n你已經成功建立了閉合電路！🎉";
+
+    const batt = components.find(c => c.type === 'battery');
+    const posWires = wires.some(w => w.nodeA === batt.nodes[0] || w.nodeB === batt.nodes[0]);
+    const negWires = wires.some(w => w.nodeA === batt.nodes[1] || w.nodeB === batt.nodes[1]);
+
+    if (!posWires) return "電池的「正極 (+)」好像還沒接線喔！";
+    if (!negWires) return "電池的「負極 (-)」忘記接線了！";
+
+    if (currentLevel === 2) {
+        const sw = components.find(c => c.type === 'switch');
+        const swConnected = wires.filter(w => w.nodeA === sw.nodes[0] || w.nodeB === sw.nodes[0] || w.nodeA === sw.nodes[1] || w.nodeB === sw.nodes[1]).length >= 2;
+        if (!swConnected) return "開關需要串聯在電路中，\n左右兩邊都要接線喔！";
+        if (sw.isOpen) return "電路接好了，但是開關是開著的(斷路)。\n點一下開關試試！";
+    }
+
+    if (currentLevel === 3) {
+        const gap = components.find(c => c.type === 'gap');
+        if (!gap.filledItem) return "測試區還是空的喔！\n放個物品進去測試看看。";
+        if (gap.filledItem.type === 'insulator') return `你放的是「${gap.filledItem.name}」。\n它是絕緣體，電流過不去，所以燈泡不亮是正常的喔！`;
+        
+        const gapN1 = wires.some(w => w.nodeA === gap.nodes[0] || w.nodeB === gap.nodes[0]);
+        const gapN2 = wires.some(w => w.nodeA === gap.nodes[1] || w.nodeB === gap.nodes[1]);
+        if (!gapN1 || !gapN2) return "測試區的夾子好像沒接好線？\n檢查一下左右兩邊的連接。";
+    }
+
+    return "電路還沒接通...\n請檢查所有接點是否都牢固連接，\n形成一個完整的圓圈回路。";
+}
+
+function askAi() {
+    aiOverlay.style.display = 'flex';
+    aiContent.innerText = "正在分析電路...";
+    setTimeout(() => {
+        aiContent.innerText = getLocalAIHint();
+    }, 500);
+}
+
+// --- 類別定義 ---
+
+class Node {
+    constructor(parent, x, y, polarity = null) {
+        this.parent = parent; this.relX = x; this.relY = y;
+        this.polarity = polarity; 
+        this.hasPos = false; this.hasNeg = false;
+    }
+    get absX() { return this.parent.x + this.relX; }
+    get absY() { return this.parent.y + this.relY; }
+    draw(ctx) {
+        const x = this.absX; const y = this.absY;
+        ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2);
+        if (this.polarity === 'positive') ctx.fillStyle = '#E74C3C';
+        else if (this.polarity === 'negative') ctx.fillStyle = '#2C3E50';
+        else ctx.fillStyle = '#95a5a6';
+        ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        if (dragNode === this) {
+            ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2);
+            ctx.strokeStyle = '#F1C40F'; ctx.stroke();
+        }
+    }
+}
+
+class Component {
+    constructor(x, y, type) {
+        this.x = x; this.y = y; this.type = type; this.nodes = []; this.state = 'off';
+    }
+    checkClick(x, y) { return false; }
+    draw(ctx) {}
+}
+
+class Battery extends Component {
+    constructor(x, y) {
+        super(x, y, 'battery');
+        // Single Battery Nodes - centered vertically
+        this.nodes.push(new Node(this, -60, 0, 'positive')); 
+        this.nodes.push(new Node(this, 60, 0, 'negative')); 
+    }
+    draw(ctx) {
+        // Battery Holder
+        ctx.fillStyle = '#34495e'; 
+        drawRoundRect(ctx, this.x - 70, this.y - 25, 140, 50, 10);
+        
+        // Single Battery
+        ctx.fillStyle = Colors.battery; 
+        drawRoundRect(ctx, this.x - 50, this.y - 10, 100, 20, 5);
+        
+        // Positive Terminal (Left)
+        ctx.fillStyle = '#ccc'; 
+        ctx.fillRect(this.x - 55, this.y - 6, 6, 12);
+
+        // Labels
+        ctx.fillStyle = '#E74C3C'; 
+        ctx.font = 'bold 24px Arial'; 
+        ctx.fillText('+', this.x - 60, this.y - 35);
+        ctx.fillStyle = '#fff'; 
+        ctx.fillText('-', this.x + 60, this.y - 35);
+        
+        // Face
+        this.drawFace(ctx, this.x, this.y - 35);
+    }
+    drawFace(ctx, x, y) {
+        ctx.fillStyle = '#333';
+        if (this.state === 'on') {
+            ctx.beginPath(); ctx.arc(x-6, y-2, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x+6, y-2, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y+4, 4, 0, Math.PI); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.arc(x-6, y, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x+6, y, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(x-4, y+5); ctx.lineTo(x+4, y+5); ctx.stroke();
+        }
+    }
+}
+
+class Bulb extends Component {
+    constructor(x, y) {
+        super(x, y, 'bulb');
+        this.nodes.push(new Node(this, -35, 30)); 
+        this.nodes.push(new Node(this, 35, 30));
+    }
+    draw(ctx) {
+        ctx.fillStyle = '#7f8c8d'; drawRoundRect(ctx, this.x - 25, this.y + 20, 50, 25, 5);
+        ctx.beginPath(); ctx.arc(this.x, this.y, 35, 0, Math.PI * 2);
+        if (this.state === 'on') {
+            ctx.fillStyle = Colors.bulbOn;
+            ctx.shadowColor = '#F1C40F'; ctx.shadowBlur = 50; ctx.fill(); ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#F1C40F'; ctx.lineWidth = 3;
+            for(let i=0; i<8; i++) {
+                let a = i*Math.PI/4 + globalTime*0.05;
+                ctx.beginPath(); ctx.moveTo(this.x+Math.cos(a)*40, this.y+Math.sin(a)*40);
+                ctx.lineTo(this.x+Math.cos(a)*50, this.y+Math.sin(a)*50); ctx.stroke();
+            }
+            this.drawFace(ctx, this.x, this.y, true);
+        } else {
+            ctx.fillStyle = Colors.bulbOff; ctx.fill();
+            ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 2; ctx.stroke();
+            this.drawFace(ctx, this.x, this.y, false);
+        }
+    }
+    drawFace(ctx, x, y, happy) {
+        ctx.fillStyle = '#555';
+        if (happy) {
+            ctx.beginPath(); ctx.arc(x-8, y-5, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x+8, y-5, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y+5, 6, 0, Math.PI); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.moveTo(x-10, y); ctx.lineTo(x-4, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x+4, y); ctx.lineTo(x+10, y); ctx.stroke();
+            ctx.font = '12px Arial'; ctx.fillText('z', x+12, y-10);
+        }
+    }
+}
+
+class Switch extends Component {
+    constructor(x, y) {
+        super(x, y, 'switch');
+        this.isOpen = true;
+        this.nodes.push(new Node(this, -40, 10));
+        this.nodes.push(new Node(this, 40, 10));
+    }
+    checkClick(mx, my) {
+        if (Math.abs(mx - this.x) < 50 && Math.abs(my - this.y) < 30) {
+            this.isOpen = !this.isOpen;
+            checkCircuit();
+            return true;
+        }
+        return false;
+    }
+    draw(ctx) {
+        ctx.fillStyle = '#1ABC9C'; drawRoundRect(ctx, this.x - 50, this.y, 100, 20, 5);
+        ctx.save(); ctx.translate(this.x - 30, this.y + 10);
+        ctx.rotate(this.isOpen ? -0.5 : 0);
+        ctx.fillStyle = '#7f8c8d'; ctx.fillRect(0, -4, 60, 8);
+        ctx.fillStyle = '#E74C3C'; ctx.beginPath(); ctx.arc(60, 0, 8, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(this.x - 30, this.y + 10, 5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(this.x + 30, this.y + 10, 5, 0, Math.PI*2); ctx.fill();
+    }
+}
+
+class TestGap extends Component {
+    constructor(x, y) {
+        super(x, y, 'gap');
+        this.nodes.push(new Node(this, -50, 0));
+        this.nodes.push(new Node(this, 50, 0));
+        this.filledItem = null;
+    }
+    draw(ctx) {
+        ctx.strokeStyle = '#BDC3C7'; ctx.setLineDash([6, 4]); 
+        ctx.strokeRect(this.x - 45, this.y - 30, 90, 60); ctx.setLineDash([]);
+        ctx.fillStyle = '#7F8C8D'; ctx.fillRect(this.x-55, this.y-5, 10, 10); ctx.fillRect(this.x+45, this.y-5, 10, 10);
+        if (this.filledItem) {
+            drawItem(ctx, this.filledItem, this.x, this.y);
+        } else {
+            ctx.fillStyle = '#95A5A6'; ctx.font = '14px Arial'; ctx.textAlign='center'; ctx.fillText('放置區', this.x, this.y + 45);
+        }
+    }
+}
+
+class Wire {
+    constructor(nodeA, nodeB, isFixed = false) {
+        this.nodeA = nodeA; this.nodeB = nodeB; this.isFixed = isFixed;
+    }
+    draw(ctx) {
+        const x1 = this.nodeA.absX; const y1 = this.nodeA.absY;
+        const x2 = this.nodeB.absX; const y2 = this.nodeB.absY;
+        ctx.beginPath(); ctx.moveTo(x1, y1);
+        ctx.bezierCurveTo(x1, y1+60, x2, y2+60, x2, y2);
+        ctx.lineCap = 'round'; ctx.lineWidth = 8;
+        
+        let color = Colors.wireOff;
+        if (isShortCircuit) {
+            if ((this.nodeA.hasPos || this.nodeA.hasNeg) && (this.nodeB.hasPos || this.nodeB.hasNeg)) {
+                color = (globalTime % 20 < 10) ? Colors.wireShort : Colors.wireBlack;
+            }
+        } else {
+            // New logic: Only light up wire if current actually flows through logic
+            const bulb = components.find(c => c.type === 'bulb');
+            const isCircuitActive = bulb && bulb.state === 'on';
+            
+            if (isCircuitActive && ((this.nodeA.hasPos || this.nodeA.hasNeg) || (this.nodeB.hasPos || this.nodeB.hasNeg))) {
+                color = Colors.wireOn;
+            } else if (this.nodeA.hasPos || this.nodeB.hasPos) {
+                color = Colors.wireRed;
+            } else if (this.nodeA.hasNeg || this.nodeB.hasNeg) {
+                color = Colors.wireBlack;
+            }
+        }
+        
+        if (color === Colors.wireOn) { ctx.shadowColor = '#F1C40F'; ctx.shadowBlur = 10; }
+        ctx.strokeStyle = color; ctx.stroke(); ctx.shadowBlur = 0;
+    }
+}
+
+class Item {
+    constructor(name, type, color, shape, x, y) {
+        this.name = name; this.type = type; this.color = color; this.shape = shape;
+        this.x = x; this.y = y; this.baseX = x; this.baseY = y; this.isDragging = false;
+    }
+}
+
+function drawItem(ctx, item, x, y) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.beginPath(); ctx.ellipse(0, 15, 15, 5, 0, 0, Math.PI*2); ctx.fill();
+    if (item.shape === 'key') {
+        ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(0, -10, 12, 0, Math.PI*2); ctx.fillRect(-4, -5, 8, 35); ctx.fillRect(4, 15, 6, 6); ctx.fill();
+    } else if (item.shape === 'eraser') {
+        ctx.fillStyle = item.color; ctx.fillRect(-15, -15, 30, 30);
+    } else if (item.shape === 'coin') {
+        ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(0,0, 15, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#D35400'; ctx.fillText('$', -4, 5);
+    }
+    ctx.fillStyle = '#555'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.fillText(item.name, 0, 30);
+    ctx.restore();
+}
+
+// --- Circuit Physics & Logic ---
+
+function runSimulation() {
+    components.forEach(c => {
+        c.nodes.forEach(n => { n.hasPos = false; n.hasNeg = false; });
+    });
+    
+    const batt = components.find(c => c.type === 'battery');
+    if (!batt) return { connected: false };
+
+    // Spread
+    const spread = (startNode, type) => {
+        let queue = [startNode];
+        let visited = new Set([startNode]);
+        if(type==='POS') startNode.hasPos=true; else startNode.hasNeg=true;
+        
+        while(queue.length>0) {
+            let curr = queue.shift();
+            wires.forEach(w => {
+                let neighbor = null;
+                if(w.nodeA===curr) neighbor=w.nodeB;
+                else if(w.nodeB===curr) neighbor=w.nodeA;
+                
+                if(neighbor) {
+                    if(type==='POS') neighbor.hasPos=true; else neighbor.hasNeg=true;
+                    if(!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        const comp = neighbor.parent;
+                        let pass = false;
+                        if(comp.type==='switch' && !comp.isOpen) pass=true;
+                        if(comp.type==='gap' && comp.filledItem && comp.filledItem.type==='conductor') pass=true;
+                        // Bulb does NOT pass in simulation to detect proper loop usage
+                        
+                        if(pass) {
+                            comp.nodes.forEach(n => {
+                                if(!visited.has(n)) {
+                                    visited.add(n);
+                                    if(type==='POS') n.hasPos=true; else n.hasNeg=true;
+                                    queue.push(n);
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+    };
+    
+    spread(batt.nodes[0], 'POS');
+    spread(batt.nodes[1], 'NEG');
+    
+    // Check Status
+    let shorted = false;
+    let crossed = false;
+    let connected = false;
+    
+    for(let c of components) {
+        for(let n of c.nodes) {
+            if(n.hasPos && n.hasNeg) { shorted = true; break; }
+        }
+    }
+    
+    if(!shorted) {
+        components.filter(c => c.type === 'bulb').forEach(b => {
+            const left = b.nodes[0]; const right = b.nodes[1];
+            // Anti-Cross Logic: Left must be Pos, Right must be Neg (or unconnected)
+            // Wait, standard is Left->Left, Right->Right? 
+            // Usually Battery Left is Pos. So Bulb Left should get Pos.
+            if(left.hasPos && right.hasNeg) connected = true;
+            else if(left.hasNeg && right.hasPos) crossed = true;
+        });
+    }
+    
+    return { connected, shorted, crossed };
+}
+
+function checkCircuit() {
+    components.forEach(c => c.state = 'off');
+    isShortCircuit = false; isCrossed = false; isBypassed = false;
+
+    // 1. Initial Simulation
+    let res = runSimulation();
+    isShortCircuit = res.shorted;
+    isCrossed = res.crossed;
+    
+    if(res.connected && !res.shorted) {
+        // 2. Anti-Bypass Validation
+        let valid = true;
+        
+        if (currentLevel === 2) {
+            // Temporarily Open Switch
+            const sw = components.find(c => c.type === 'switch');
+            const originalState = sw.isOpen;
+            sw.isOpen = true; // Force Open
+            const sim = runSimulation();
+            if (sim.connected) { valid = false; isBypassed = true; } // Still connected -> Switch bypassed
+            sw.isOpen = originalState; // Restore
+        }
+        
+        if (currentLevel === 3) {
+            // Temporarily Remove Item
+            const gap = components.find(c => c.type === 'gap');
+            const originalItem = gap.filledItem;
+            gap.filledItem = null; // Force Empty
+            const sim = runSimulation();
+            if (sim.connected) { valid = false; isBypassed = true; } // Still connected -> Gap bypassed
+            gap.filledItem = originalItem; // Restore
+        }
+        
+        if (valid) {
+            components.find(c => c.type === 'battery').state = 'on';
+            components.filter(c => c.type === 'bulb').forEach(b => b.state = 'on');
+            
+            // Re-run sim to ensure colors are correct (simulation clears flags)
+            runSimulation(); 
+            
+            if(!isLevelComplete) {
+                isLevelComplete = true;
+                setTimeout(showWin, 800);
+            }
+        } else {
+            // If bypassed, we need to re-run simulation to show wires but NOT light bulb
+            runSimulation();
+        }
+    }
+}
+
+function loadLevel(id) {
+    currentLevel = id; components = []; wires = []; isLevelComplete = false; dragNode = null; 
+    isShortCircuit = false; isCrossed = false; isBypassed = false;
+    uiLevel.innerText = "Level " + id;
+    const cx = canvas.width / 2; const cy = canvas.height / 2;
+    const topY = 150; const botY = canvas.height - 150;
+
+    if (id === 1) {
+        uiInstruction.innerText = "請將電池正極(+)連到燈泡左邊，負極(-)連到右邊。";
+        components.push(new Battery(cx, topY)); components.push(new Bulb(cx, botY));
+    }
+    else if (id === 2) {
+        uiInstruction.innerText = "負極已接好。請將開關接在正極與燈泡之間。";
+        const batt = new Battery(cx, topY); const bulb = new Bulb(cx, botY);
+        const sw = new Switch(cx - 150, cy);
+        components.push(batt, sw, bulb);
+        wires.push(new Wire(batt.nodes[1], bulb.nodes[1], true));
+    }
+    else if (id === 3) {
+        uiInstruction.innerText = "將物品放入測試區，並將電路接通！";
+        components.push(new Battery(cx, topY));
+        components.push(new TestGap(cx + 180, cy));
+        components.push(new Bulb(cx, botY));
+        components.items = [
+            new Item("橡皮擦", "insulator", "#E74C3C", "eraser", cx - 120, botY + 80),
+            new Item("鑰匙", "conductor", "#F1C40F", "key", cx, botY + 80),
+            new Item("硬幣", "conductor", "#D35400", "coin", cx + 120, botY + 80)
+        ];
+    }
+    checkCircuit();
+}
+
+function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: x - r.left, y: y - r.top };
+}
+
+let activeItem = null;
+
+function onDown(e) {
+    if (isLevelComplete) return;
+    const {x, y} = getPos(e);
+    for (let c of components) { if (c.checkClick(x, y)) return; }
+    for (let c of components) {
+        for (let n of c.nodes) {
+            if (Math.hypot(x - n.absX, y - n.absY) < 30) {
+                let existingWire = wires.find(w => w.nodeA === n || w.nodeB === n);
+                if (existingWire) {
+                    if (existingWire.isFixed) return;
+                    wires = wires.filter(w => w !== existingWire);
+                    dragNode = (existingWire.nodeA === n) ? existingWire.nodeB : existingWire.nodeA;
+                    tempWireEnd = {x, y};
+                    checkCircuit(); return;
+                } else {
+                    dragNode = n; tempWireEnd = {x, y}; return;
+                }
+            }
+        }
+    }
+    if (components.items) {
+        for (let i of components.items) {
+            if (Math.hypot(x - i.x, y - i.y) < 30) {
+                activeItem = i; i.isDragging = true; return;
+            }
+        }
+    }
+}
+
+function onMove(e) {
+    const {x, y} = getPos(e);
+    if (dragNode) {
+        tempWireEnd = {x, y}; snapRing.style.display = 'none';
+        for (let c of components) {
+            for (let n of c.nodes) {
+                if (n !== dragNode && n.parent !== dragNode.parent) {
+                    if (Math.hypot(x - n.absX, y - n.absY) < 30) {
+                        snapRing.style.display = 'block';
+                        snapRing.style.left = n.absX + 'px'; snapRing.style.top = n.absY + 'px';
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (activeItem) { activeItem.x = x; activeItem.y = y; }
+}
+
+function onUp(e) {
+    if (dragNode) {
+        snapRing.style.display = 'none'; let hitNode = null;
+        for (let c of components) {
+            for (let n of c.nodes) {
+                if (n !== dragNode && n.parent !== dragNode.parent) {
+                    if (Math.hypot(tempWireEnd.x - n.absX, tempWireEnd.y - n.absY) < 30) {
+                        hitNode = n; break;
+                    }
+                }
+            }
+        }
+        if (hitNode) {
+            const targetHasWire = wires.some(w => w.nodeA === hitNode || w.nodeB === hitNode);
+            if (!targetHasWire) {
+                const exists = wires.some(w => (w.nodeA === dragNode && w.nodeB === hitNode) || (w.nodeA === hitNode && w.nodeB === dragNode));
+                if (!exists) { wires.push(new Wire(dragNode, hitNode)); checkCircuit(); }
+            }
+        }
+        dragNode = null;
+    }
+    if (activeItem) {
+        activeItem.isDragging = false;
+        const gap = components.find(c => c.type === 'gap');
+        if (gap && Math.abs(activeItem.x - gap.x) < 50 && Math.abs(activeItem.y - gap.y) < 50) {
+            if (gap.filledItem && gap.filledItem !== activeItem) {
+                gap.filledItem.x = gap.filledItem.baseX; gap.filledItem.y = gap.filledItem.baseY;
+            }
+            activeItem.x = gap.x; activeItem.y = gap.y; gap.filledItem = activeItem;
+        } else {
+            activeItem.x = activeItem.baseX; activeItem.y = activeItem.baseY;
+            if (gap && gap.filledItem === activeItem) gap.filledItem = null;
+        }
+        activeItem = null; checkCircuit();
+    }
+}
+
+function loop() {
+    globalTime++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    wires.forEach(w => w.draw(ctx));
+    if (dragNode) {
+        ctx.beginPath(); ctx.moveTo(dragNode.absX, dragNode.absY);
+        ctx.lineTo(tempWireEnd.x, tempWireEnd.y);
+        ctx.lineWidth = 4; ctx.strokeStyle = '#7f8c8d';
+        ctx.setLineDash([10, 5]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    components.forEach(c => { c.draw(ctx); c.nodes.forEach(n => n.draw(ctx)); });
+    if (components.items) components.items.forEach(i => drawItem(ctx, i, i.x, i.y));
+    loopId = requestAnimationFrame(loop);
+}
+
+function showWin() {
+    overlay.style.display = 'flex'; setTimeout(() => overlay.style.opacity = 1, 10);
+    if (currentLevel < 3) {
+        overlayTitle.innerText = "成功閉合！💡"; overlayDesc.innerText = "太棒了！電流順利流動！";
+        btnStart.innerText = "下一關";
+        btnStart.onclick = () => { loadLevel(currentLevel + 1); hideOverlay(); };
+    } else {
+        overlayTitle.innerText = "全破！🏆"; overlayDesc.innerText = "你是小小電路工程師！";
+        btnStart.innerText = "重玩";
+        btnStart.onclick = () => { loadLevel(1); hideOverlay(); };
+    }
+}
+
+function hideOverlay() { overlay.style.opacity = 0; setTimeout(() => overlay.style.display = 'none', 500); }
+
+btnStart.onclick = () => { loadLevel(1); hideOverlay(); };
+btnDelete.onclick = () => { wires = wires.filter(w => w.isFixed); checkCircuit(); };
+btnReset.onclick = () => { loadLevel(currentLevel); };
+btnAi.onclick = askAi;
+btnAiClose.onclick = () => { aiOverlay.style.display = 'none'; };
+
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight; loadLevel(currentLevel);
+});
+
+canvas.addEventListener('mousedown', onDown); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e); }, {passive: false});
+window.addEventListener('touchmove', (e) => { if(dragNode||activeItem) e.preventDefault(); onMove(e); }, {passive: false});
+window.addEventListener('touchend', onUp);
+
+if (window.circuitLoop) cancelAnimationFrame(window.circuitLoop);
+loadLevel(1); loop(); window.circuitLoop = loopId;
+
+})();
+</script>
+</body>
+</html>
